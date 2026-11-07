@@ -140,6 +140,10 @@
 
     if (startsPlus || startsZeroZero) {
       if (digits.length < 8 || digits.length > 15) return null;
+      // México: formato viejo +52 1 55... (el "1" ya no se usa).
+      if (digits.length === 13 && digits.indexOf('521') === 0) {
+        digits = '52' + digits.slice(3);
+      }
       return { e164: '+' + digits, digits: digits };
     }
 
@@ -149,12 +153,20 @@
 
     // El número ya viene con el código de país.
     if (digits.length >= 11 && digits.indexOf(ccDigits) === 0) {
+      if (ccDigits === '52' && digits.length === 13 && digits.indexOf('521') === 0) {
+        digits = '52' + digits.slice(3);
+      }
       return { e164: '+' + digits, digits: digits };
     }
 
     // Marcación nacional con 0 inicial.
-    const national = digits.replace(/^0+/, '');
+    let national = digits.replace(/^0+/, '');
     if (national.length < 6) return null;
+
+    // México: "1 55 1234 5678" (formato viejo sin +52).
+    if (ccDigits === '52' && national.length === 11 && national.charAt(0) === '1') {
+      national = national.slice(1);
+    }
 
     if (national.length >= 7 && national.length <= 10) {
       return { e164: '+' + ccDigits + national, digits: ccDigits + national };
