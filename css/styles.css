@@ -365,7 +365,13 @@ textarea.field { resize: vertical; min-height: 96px; line-height: 1.45; }
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.cv-text span { font-size: 12px; color: var(--muted); }
+.cv-text span {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
 /* ---------- notas ---------- */
 

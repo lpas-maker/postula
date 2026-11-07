@@ -362,6 +362,13 @@
     const payload = { files: [file], text: message };
 
     if (navigator.canShare && navigator.share && navigator.canShare(payload)) {
+      // Copia el mensaje por si WhatsApp adjunta solo el archivo.
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(message);
+        }
+      } catch (err) { /* sin permiso de portapapeles */ }
+
       try {
         await navigator.share(payload);
         return true;
@@ -567,13 +574,13 @@
       badge.textContent = ext;
       badge.classList.remove('empty');
       name.textContent = state.cv.name;
-      meta.textContent = formatSize(state.cv.size) + ' · guardado en este teléfono';
+      meta.textContent = formatSize(state.cv.size) + ' · guardado aquí';
       if (button) button.textContent = 'Cambiar';
     } else {
       badge.textContent = 'PDF';
       badge.classList.add('empty');
       name.textContent = 'Sin hoja de vida';
-      meta.textContent = 'Súbela una vez y queda guardada en tu teléfono';
+      meta.textContent = 'Súbela una vez y queda guardada';
       if (button) button.textContent = 'Subir';
     }
   }
