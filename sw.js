@@ -2,7 +2,7 @@
    Guarda la app para que abra sin internet y recibe capturas compartidas
    desde la galería ("Compartir → Postula"). */
 
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL_CACHE = 'postula-shell-' + VERSION;
 const RUNTIME_CACHE = 'postula-runtime-v1';
 const SHARED_CACHE = 'postula-shared';
