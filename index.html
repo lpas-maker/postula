@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Postula — tu CV por WhatsApp</title>
+<meta name="description" content="Detecta el número de una captura y abre WhatsApp con tu mensaje y tu hoja de vida listos para enviar.">
+<meta name="theme-color" content="#128C7E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Postula">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="app">
+
+  <header class="app-header">
+    <div class="header-inner">
+      <img class="logo" src="icons/icon-192.png" alt="" width="36" height="36">
+      <div class="brand">
+        <h1>Postula</h1>
+        <p>Tu CV por WhatsApp en segundos</p>
+      </div>
+      <button class="icon-btn install-mini" id="btn-install-mini" type="button" title="Instalar app" aria-label="Instalar aplicación" hidden>⤓</button>
+    </div>
+  </header>
+
+  <div class="banner" id="install-banner" hidden>
+    <div class="banner-text">
+      <strong>Tenla siempre a mano</strong>
+      <span>Instálala en tu pantalla de inicio.</span>
+    </div>
+    <button class="btn soft sm" id="btn-install-banner" type="button">Instalar</button>
+    <button class="icon-btn" id="btn-dismiss-banner" type="button" aria-label="Cerrar">✕</button>
+  </div>
+
+  <main class="wrap">
+
+    <!-- ============ ENVIAR ============ -->
+    <section class="view" id="view-send">
+
+      <div class="card">
+        <div class="row-between">
+          <label class="label" for="phone">Número de WhatsApp</label>
+          <span class="tag">1</span>
+        </div>
+
+        <div class="phone-row">
+          <select class="field cc" id="cc" aria-label="Código de país"></select>
+          <input class="field phone" id="phone" type="tel" inputmode="tel"
+                 autocomplete="tel" placeholder="300 123 4567" aria-describedby="phone-hint">
+        </div>
+        <p class="hint" id="phone-hint">Escribe el número o detéctalo desde una captura.</p>
+
+        <div class="row">
+          <button class="btn soft grow" id="btn-scan" type="button">
+            <span aria-hidden="true">📷</span> Escanear
+          </button>
+          <button class="btn soft grow" id="btn-paste" type="button">
+            <span aria-hidden="true">📋</span> Pegar
+          </button>
+        </div>
+        <input type="file" id="file-image" accept="image/*" hidden>
+      </div>
+
+      <div class="card">
+        <div class="row-between">
+          <label class="label" for="message">Mensaje</label>
+          <select class="mini-select" id="template" aria-label="Elegir plantilla"></select>
+        </div>
+        <textarea class="field" id="message" rows="4" placeholder="Escribe el mensaje que quieres enviar…"></textarea>
+
+        <div class="grid-2">
+          <input class="field" id="company" placeholder="Empresa (opcional)" autocomplete="organization" aria-label="Empresa">
+          <input class="field" id="role" placeholder="Cargo (opcional)" aria-label="Cargo">
+        </div>
+      </div>
+
+      <div class="card cv-card" id="cv-card">
+        <div class="cv-badge" id="cv-badge">PDF</div>
+        <div class="cv-text">
+          <strong id="cv-name">Sin hoja de vida</strong>
+          <span id="cv-meta">Súbela una vez y queda guardada en tu teléfono</span>
+        </div>
+        <button class="btn soft sm" id="btn-cv-upload" type="button">Subir</button>
+      </div>
+      <input type="file" id="file-cv" accept="application/pdf,image/*,.doc,.docx" hidden>
+
+      <div class="actions">
+        <button class="btn primary big block" id="btn-open" type="button">
+          Abrir chat en WhatsApp
+        </button>
+        <button class="btn outline big block" id="btn-share" type="button">
+          <span aria-hidden="true">📎</span> Enviar mensaje + CV juntos
+        </button>
+      </div>
+
+      <details class="card note">
+        <summary>¿Por qué hay dos botones?</summary>
+        <p><strong>“Abrir chat”</strong> abre exactamente el chat del número con el mensaje escrito. WhatsApp no permite pegar un archivo desde un enlace, así que solo falta tocar el clip 📎 y elegir tu CV (queda en la lista de recientes).</p>
+        <p><strong>“Enviar mensaje + CV”</strong> abre el menú de compartir del teléfono con el mensaje y el archivo juntos: eliges WhatsApp y el contacto, y se envía todo de una.</p>
+      </details>
+
+    </section>
+
+    <!-- ============ HISTORIAL ============ -->
+    <section class="view" id="view-history" hidden>
+      <div class="row-between section-head">
+        <h2>Aplicaciones</h2>
+        <button class="link-btn danger" id="btn-clear-history" type="button">Vaciar</button>
+      </div>
+      <p class="hint" id="hist-stats"></p>
+      <ul class="hist-list" id="hist-list"></ul>
+      <p class="empty" id="hist-empty">Aún no has abierto ningún chat. Cuando lo hagas, quedará registrado aquí para que no repitas empresa.</p>
+    </section>
+
+    <!-- ============ AJUSTES ============ -->
+    <section class="view" id="view-settings" hidden>
+      <div class="card">
+        <label class="label" for="set-name">Mi nombre</label>
+        <input class="field" id="set-name" placeholder="Ej: María Pérez" autocomplete="name">
+        <p class="hint">Se usa donde escribas <code>{nombre}</code> dentro de una plantilla.</p>
+      </div>
+
+      <div class="card">
+        <div class="row-between">
+          <h2 class="h2">Plantillas de mensaje</h2>
+          <button class="btn soft sm" id="btn-new-tpl" type="button">Nueva</button>
+        </div>
+        <p class="hint">Toca una plantilla para editarla. Puedes usar <code>{nombre}</code>, <code>{empresa}</code> y <code>{puesto}</code>.</p>
+        <div id="tpl-list" class="tpl-list"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Instalar en el celular</h2>
+        <button class="btn soft block" id="btn-install" type="button">Instalar aplicación</button>
+        <div class="hint" id="install-help" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card">
+        <h2 class="h2">Privacidad</h2>
+        <p class="hint">Todo se guarda solo en este teléfono. Las capturas se leen aquí mismo con un lector local: no se suben a ningún servidor. No hay cuentas ni registro.</p>
+        <button class="btn soft block danger-text" id="btn-reset" type="button">Borrar todos los datos</button>
+      </div>
+
+      <p class="version">Postula v1.0 · hecho para aplicar sin enredos</p>
+    </section>
+
+  </main>
+
+  <nav class="tabbar" role="tablist" aria-label="Secciones">
+    <button class="tab" role="tab" data-tab="send" aria-selected="true">
+      <span class="tab-ico" aria-hidden="true">💬</span><span>Enviar</span>
+    </button>
+    <button class="tab" role="tab" data-tab="history" aria-selected="false">
+      <span class="tab-ico" aria-hidden="true">📋</span><span>Historial</span>
+    </button>
+    <button class="tab" role="tab" data-tab="settings" aria-selected="false">
+      <span class="tab-ico" aria-hidden="true">⚙️</span><span>Ajustes</span>
+    </button>
+  </nav>
+
+</div>
+
+<!-- ============ HOJA DE ESCANEO ============ -->
+<div class="modal" id="ocr-modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="ocr-title">
+    <div class="sheet-head">
+      <h2 id="ocr-title">Detectar número</h2>
+      <button class="icon-btn" id="ocr-close" type="button" aria-label="Cerrar">✕</button>
+    </div>
+
+    <div class="ocr-preview" id="ocr-preview-wrap" hidden>
+      <img id="ocr-preview" alt="Captura que estás escaneando">
+    </div>
+
+    <div id="ocr-progress" hidden>
+      <div class="bar"><span id="ocr-bar"></span></div>
+      <p class="hint" id="ocr-status">Preparando el lector…</p>
+    </div>
+
+    <div id="ocr-results"></div>
+
+    <details id="ocr-raw-wrap" class="raw-wrap" hidden>
+      <summary>Ver el texto detectado</summary>
+      <textarea class="field" id="ocr-raw" rows="6" spellcheck="false"></textarea>
+      <button class="btn soft block" id="ocr-raw-extract" type="button">Buscar números en este texto</button>
+    </details>
+
+    <div class="sheet-actions">
+      <button class="btn soft block" id="ocr-manual" type="button">Escribir el número a mano</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<noscript><p style="padding:24px;text-align:center">Necesitas activar JavaScript para usar Postula.</p></noscript>
+
+<script src="js/app.js" defer></script>
+</body>
+</html>

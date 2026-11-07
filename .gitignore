@@ -1,0 +1,15 @@
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Temporales de pruebas
+_t*
+_shot*
+
+# Python
+__pycache__/
+*.pyc
+
+# Editores
+.vscode/
+.idea/

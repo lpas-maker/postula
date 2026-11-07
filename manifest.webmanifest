@@ -1,0 +1,58 @@
+{
+  "name": "Postula — tu CV por WhatsApp",
+  "short_name": "Postula",
+  "description": "Detecta el número desde una captura y abre WhatsApp con tu mensaje y tu hoja de vida listos para enviar.",
+  "lang": "es",
+  "dir": "ltr",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "id": "postula-whatsapp-cv",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "theme_color": "#128C7E",
+  "background_color": "#0f1b18",
+  "categories": ["business", "productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Escanear una captura",
+      "short_name": "Escanear",
+      "description": "Detectar el número de WhatsApp de una imagen",
+      "url": "./?action=scan",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "share_target": {
+    "action": "./share-target",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "image",
+          "accept": ["image/*"]
+        }
+      ]
+    }
+  }
+}
