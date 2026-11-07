@@ -343,6 +343,17 @@
     setTimeout(() => URL.revokeObjectURL(url), 5000);
   }
 
+  function guessType(name) {
+    const ext = String(name || '').split('.').pop().toLowerCase();
+    if (ext === 'pdf') return 'application/pdf';
+    if (ext === 'doc') return 'application/msword';
+    if (ext === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (ext === 'jpg' || ext === 'jpeg') return 'image/jpeg';
+    if (ext === 'png') return 'image/png';
+    if (ext === 'webp') return 'image/webp';
+    return 'application/octet-stream';
+  }
+
   async function shareCVWithMessage(message) {
     if (!state.cv || !state.cv.blob) {
       toast('Primero sube tu hoja de vida');
@@ -353,7 +364,7 @@
     let file;
     try {
       file = new File([state.cv.blob], state.cv.name, {
-        type: state.cv.type || 'application/pdf'
+        type: state.cv.type || guessType(state.cv.name)
       });
     } catch (err) {
       file = state.cv.blob;
@@ -363,9 +374,10 @@
 
     if (navigator.canShare && navigator.share && navigator.canShare(payload)) {
       // Copia el mensaje por si WhatsApp adjunta solo el archivo.
+      // Sin await: en iOS hay que conservar la activación del toque para share().
       try {
         if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(message);
+          navigator.clipboard.writeText(message).catch(() => {});
         }
       } catch (err) { /* sin permiso de portapapeles */ }
 
@@ -604,7 +616,7 @@
     const record = {
       blob: file,
       name: file.name || 'mi-hoja-de-vida.pdf',
-      type: file.type || 'application/pdf',
+      type: file.type || guessType(file.name),
       size: file.size || 0,
       ts: Date.now()
     };
@@ -612,6 +624,13 @@
       await idbPut('cv', record);
       state.cv = record;
       renderCV();
+      // En iOS el sistema puede borrar datos de sitios poco usados:
+      // pedimos almacenamiento persistente (si el navegador lo permite).
+      try {
+        if (navigator.storage && navigator.storage.persist) {
+          navigator.storage.persist().catch(() => {});
+        }
+      } catch (err) { /* sin soporte */ }
       toast('Hoja de vida guardada ✅');
     } catch (err) {
       toast('No pude guardar el archivo. Revisa el espacio del teléfono.');
@@ -1002,9 +1021,17 @@
 
   function installHelp() {
     const ua = navigator.userAgent || '';
-    if (/iPhone|iPad|iPod/i.test(ua)) {
-      return 'En Safari: toca el botón Compartir ⤴ y elige “Añadir a pantalla de inicio”.';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    if (isIOS) {
+      const isSafari = !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//i.test(ua);
+      if (!isSafari) {
+        return 'En iPhone solo se puede instalar desde Safari. Abre esta página en Safari y toca Compartir ⤴ → “Añadir a pantalla de inicio”.';
+      }
+      return 'En Safari: toca Compartir ⤴ (abajo) y elige “Añadir a pantalla de inicio”.';
     }
+
     if (/Android/i.test(ua)) {
       return 'En Chrome: toca el menú ⋮ (arriba a la derecha) y elige “Instalar aplicación” o “Añadir a pantalla de inicio”.';
     }
@@ -1460,6 +1487,7 @@
   }
 
   async function onPaste() {
+    // 1) Intentar una imagen del portapapeles (no disponible en iOS).
     try {
       if (navigator.clipboard && navigator.clipboard.read) {
         const items = await navigator.clipboard.read();
@@ -1473,7 +1501,10 @@
           }
         }
       }
+    } catch (err) { /* iOS no permite leer imágenes; seguimos con texto */ }
 
+    // 2) Texto copiado (funciona en iPhone con Safari).
+    try {
       if (navigator.clipboard && navigator.clipboard.readText) {
         const text = await navigator.clipboard.readText();
         if (text && text.trim()) {
@@ -1488,11 +1519,12 @@
           return;
         }
       }
-
-      toast('No hay nada pegado. Copia un número o una captura primero.');
     } catch (err) {
-      toast('No pude leer el portapapeles. Usa “Escanear captura”.');
+      toast('iPhone no dejó leer el portapapeles. Usa “Escanear”.');
+      return;
     }
+
+    toast('No hay nada pegado. Copia un número o una captura primero.');
   }
 
   /* ------------------------------------------------------------------ */

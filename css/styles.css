@@ -691,3 +691,15 @@ textarea.field { resize: vertical; min-height: 96px; line-height: 1.45; }
 }
 
 ::selection { background: color-mix(in srgb, var(--green) 30%, transparent); }
+
+/* iPhone/iPad: evita el zoom automático al enfocar campos (<16px) */
+@supports (-webkit-touch-callout: none) {
+  input.field,
+  select.field,
+  textarea.field,
+  .cc,
+  .mini-select {
+    font-size: 16px;
+  }
+  .phone { font-size: 19px; }
+}

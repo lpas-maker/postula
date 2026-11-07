@@ -37,7 +37,28 @@ el historial y no volver a guardar contactos.
    `ABIERTA` / `ENVIADA` para cambiar el estado.
 
 También puedes **compartir una captura desde la galería** directamente a
-Postula (Android): Compartir → Postula → detecta el número solo.
+Postula (solo Android): Compartir → Postula → detecta el número solo.
+
+---
+
+## iPhone (iOS)
+
+Funciona, pero iOS tiene reglas propias:
+
+- **Instalar solo desde Safari.** Si abre el enlace en Chrome/Firefox del
+  iPhone, la opción de instalar no aparece. Desde Safari: **Compartir ⤴ →
+  Añadir a pantalla de inicio**.
+- **La app instalada tiene sus propios datos.** Lo que subas en Safari no
+  aparece dentro del icono de la pantalla de inicio (y viceversa). Sube el CV
+  **después** de instalarla.
+- **No existe “Compartir captura → Postula”** (eso es una función de Android).
+  En iPhone usa el botón **Escanear**, que abre Fotos.
+- **Safari puede liberar datos** de sitios que no se usan por semanas. La app
+  pide almacenamiento persistente, pero conviene tener el CV también en
+  Archivos/iCloud por si hay que volver a subirlo.
+- **Enviar mensaje + CV** usa la hoja de compartir de iOS. Si WhatsApp adjunta
+  el archivo sin el texto, el mensaje queda copiado al portapapeles para
+  pegarlo.
 
 ---
 
@@ -65,8 +86,10 @@ Luego abre <http://localhost:8080>.
 
 ### iPhone (Safari)
 
-1. Abre la URL **en Safari**.
+1. Abre la URL **en Safari** (no en Chrome ni en Instagram/WhatsApp).
 2. Botón **Compartir ⤴** → **Añadir a pantalla de inicio**.
+3. Ábrela desde el icono y **sube el CV ahí dentro** (los datos de la app
+   instalada son independientes de los de Safari).
 
 > En iPhone, compartir el CV usa el menú de compartir del sistema (iOS 15+).
 > En Android funciona con Chrome/Edge.
