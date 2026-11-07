@@ -53,7 +53,7 @@
         <div class="phone-row">
           <select class="field cc" id="cc" aria-label="Código de país"></select>
           <input class="field phone" id="phone" type="tel" inputmode="tel"
-                 autocomplete="tel" placeholder="300 123 4567" aria-describedby="phone-hint">
+                 autocomplete="tel" placeholder="55 1234 5678" aria-describedby="phone-hint">
         </div>
         <p class="hint" id="phone-hint">Escribe el número o detéctalo desde una captura.</p>
 
@@ -132,7 +132,7 @@
           <h2 class="h2">Plantillas de mensaje</h2>
           <button class="btn soft sm" id="btn-new-tpl" type="button">Nueva</button>
         </div>
-        <p class="hint">Toca una plantilla para editarla. Puedes usar <code>{nombre}</code>, <code>{empresa}</code> y <code>{puesto}</code>.</p>
+        <p class="hint"><code>{presentacion}</code> escribe “Soy Tu Nombre.” y <code>{postulacion}</code> arma “al puesto de X en Y”. También puedes usar <code>{nombre}</code>, <code>{empresa}</code> y <code>{puesto}</code>.</p>
         <div id="tpl-list" class="tpl-list"></div>
       </div>
 
@@ -195,6 +195,17 @@
     <div class="sheet-actions">
       <button class="btn soft block" id="ocr-manual" type="button">Escribir el número a mano</button>
     </div>
+  </div>
+</div>
+
+<div class="modal" id="setup-modal" hidden>
+  <div class="sheet setup" role="dialog" aria-modal="true" aria-labelledby="setup-title">
+    <div class="setup-icon" aria-hidden="true">👋</div>
+    <h2 id="setup-title">Antes de empezar</h2>
+    <p class="hint">¿Cómo se llama la persona que va a postularse? Lo uso para firmar el mensaje y que suene natural.</p>
+    <input class="field" id="setup-name" type="text" placeholder="Ej: María Pérez" autocomplete="name" maxlength="40">
+    <button class="btn primary big block" id="setup-save" type="button">Continuar</button>
+    <button class="link-btn" id="setup-skip" type="button">Prefiero no ponerlo</button>
   </div>
 </div>
 

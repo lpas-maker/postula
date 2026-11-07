@@ -50,8 +50,8 @@
   /* ------------------------------------------------------------------ */
 
   const COUNTRIES = [
-    { code: '57', name: 'Colombia', flag: '🇨🇴' },
     { code: '52', name: 'México', flag: '🇲🇽' },
+    { code: '57', name: 'Colombia', flag: '🇨🇴' },
     { code: '54', name: 'Argentina', flag: '🇦🇷' },
     { code: '56', name: 'Chile', flag: '🇨🇱' },
     { code: '51', name: 'Perú', flag: '🇵🇪' },
@@ -73,19 +73,19 @@
 
   const DEFAULT_TEMPLATES = [
     {
-      id: 'general',
-      name: 'Postulación general',
-      body: '¡Hola! Buen día. Vi su publicación y me gustaría postularme. Adjunto mi hoja de vida. Quedo atenta a cualquier información adicional. ¡Gracias!'
+      id: 'formal',
+      name: 'Formal (recomendada)',
+      body: '¡Hola! Buen día. {presentacion}Me gustaría postularme {postulacion}. Adjunto mi hoja de vida para su consideración. Quedo a la orden para cualquier información adicional. ¡Gracias!'
     },
     {
-      id: 'con-nombre',
-      name: 'Con mi nombre',
-      body: '¡Hola! Buen día, soy {nombre}. Vi su publicación y me gustaría postularme al cargo. Adjunto mi hoja de vida. Quedo atenta a cualquier información adicional. ¡Gracias!'
+      id: 'corta',
+      name: 'Corta y directa',
+      body: '¡Hola! Buen día. {presentacion}Me interesa postularme {postulacion}. Le comparto mi hoja de vida. ¡Gracias!'
     },
     {
-      id: 'vacante',
-      name: 'Mencionando la vacante',
-      body: '¡Hola! Buen día. Me gustaría postularme a la vacante de {puesto} en {empresa}. Adjunto mi hoja de vida para su consideración. Quedo atenta. ¡Gracias!'
+      id: 'cercana',
+      name: 'Cercana',
+      body: '¡Hola! Qué gusto saludarle. {presentacion}Vi su publicación y me encantaría aplicar {postulacion}. Le adjunto mi hoja de vida para su consideración. ¡Gracias!'
     }
   ];
 
@@ -94,17 +94,31 @@
   /* ------------------------------------------------------------------ */
 
   const state = {
-    cc: store.get('cc', '57'),
+    cc: store.get('cc', '52'),
     name: store.get('name', ''),
     templates: store.get('templates', null) || DEFAULT_TEMPLATES.slice(),
-    activeTemplate: store.get('activeTemplate', 'general'),
+    activeTemplate: store.get('activeTemplate', 'formal'),
     history: store.get('history', []) || [],
     cv: null,
-    messageDirty: false
+    messageDirty: false,
+    ocrInfo: { company: '', role: '' }
   };
 
   if (!Array.isArray(state.templates) || state.templates.length === 0) {
     state.templates = DEFAULT_TEMPLATES.slice();
+  }
+
+  // Migración: las plantillas viejas no tenían {presentacion} ni {postulacion}.
+  if (!store.get('templatesV2', false)) {
+    const ids = state.templates.map((t) => t.id);
+    const viejas = ['general', 'con-nombre', 'vacante'];
+    if (state.templates.length === 3 && viejas.every((id) => ids.indexOf(id) !== -1)) {
+      state.templates = DEFAULT_TEMPLATES.slice();
+      state.activeTemplate = 'formal';
+      store.set('templates', state.templates);
+      store.set('activeTemplate', 'formal');
+    }
+    store.set('templatesV2', true);
   }
 
   /* ------------------------------------------------------------------ */
@@ -131,7 +145,7 @@
 
     if (digits.length < 6 || digits.length > 15) return null;
 
-    const ccDigits = String(cc || '57');
+    const ccDigits = String(cc || '52');
 
     // El número ya viene con el código de país.
     if (digits.length >= 11 && digits.indexOf(ccDigits) === 0) {
@@ -168,7 +182,10 @@
     const national = cc ? digits.slice(cc.length) : digits;
 
     let grouped = national;
-    if (national.length === 10) {
+    if (cc === '52' && national.length === 10) {
+      // México: 55 1234 5678
+      grouped = national.slice(0, 2) + ' ' + national.slice(2, 6) + ' ' + national.slice(6);
+    } else if (national.length === 10) {
       grouped = national.slice(0, 3) + ' ' + national.slice(3, 6) + ' ' + national.slice(6);
     } else if (national.length === 9) {
       grouped = national.slice(0, 2) + ' ' + national.slice(2, 5) + ' ' + national.slice(5);
@@ -223,6 +240,193 @@
       .filter((c) => c.score >= 30)
       .sort((a, b) => b.score - a.score)
       .slice(0, 6);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Detección de empresa y puesto en el texto de la captura              */
+  /* ------------------------------------------------------------------ */
+
+  const ROLE_DICTIONARY = [
+    'auxiliar administrativo', 'auxiliar contable', 'auxiliar de recursos humanos',
+    'auxiliar de almacen', 'auxiliar de limpieza', 'auxiliar de cocina',
+    'auxiliar de enfermeria', 'auxiliar de compras', 'auxiliar de produccion',
+    'auxiliar de ventas', 'auxiliar de logistica', 'auxiliar de mantenimiento',
+    'recepcionista', 'secretaria', 'asistente administrativo', 'asistente ejecutivo',
+    'asistente contable', 'asistente de direccion', 'asistente de gerencia',
+    'vendedor', 'vendedora', 'ejecutivo de ventas', 'ejecutiva de ventas',
+    'asesor comercial', 'asesora comercial', 'asesor de ventas', 'promotor',
+    'promotora', 'impulsor', 'impulsora', 'demostrador', 'demostradora',
+    'cajero', 'cajera', 'mesero', 'mesera', 'bartender', 'cocinero', 'cocinera',
+    'barista', 'panadero', 'panadera', 'repostero', 'repostera',
+    'almacenista', 'bodeguero', 'montacarguista', 'repartidor', 'repartidora',
+    'chofer', 'conductor', 'operador', 'operadora', 'empacador', 'empacadora',
+    'surtidor', 'inventarista', 'picker', 'packer',
+    'analista', 'analista financiero', 'analista de datos', 'analista de sistemas',
+    'analista de credito', 'analista contable', 'analista de calidad',
+    'contador', 'contadora', 'auditor', 'auditora', 'tesorero', 'tesorera',
+    'gerente', 'gerente general', 'subgerente', 'jefe', 'jefa', 'supervisor',
+    'supervisora', 'coordinador', 'coordinadora', 'director', 'directora',
+    'administrador', 'administradora', 'encargado', 'encargada',
+    'ingeniero', 'ingeniera', 'ingeniero industrial', 'ingeniero en sistemas',
+    'tecnico', 'tecnica', 'mecanico', 'mecanica', 'electricista', 'soldador',
+    'plomero', 'mercadologo', 'mercadologa', 'disenador', 'disenadora',
+    'disenador grafico', 'community manager', 'programador', 'programadora',
+    'desarrollador', 'desarrolladora', 'soporte tecnico', 'desarrollador web',
+    'enfermero', 'enfermera', 'medico', 'medica', 'dentista', 'fisioterapeuta',
+    'psicologo', 'psicologa', 'nutriologo', 'nutriologa',
+    'docente', 'maestro', 'maestra', 'profesor', 'profesora', 'tutor', 'tutora',
+    'guardia', 'guardia de seguridad', 'velador', 'intendente', 'jardinero',
+    'practicante', 'becario', 'becaria', 'pasante', 'trainee', 'aprendiz'
+  ];
+
+  const ROLE_REGEX = new RegExp(
+    '\\b(?:' +
+      ROLE_DICTIONARY
+        .slice()
+        .sort((a, b) => b.length - a.length)
+        .map((role) => role.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\s+/g, '\\s+'))
+        .join('|') +
+    ')\\b',
+    'i'
+  );
+
+  const COMPANY_PREFIX_REGEX = new RegExp(
+    '\\b(?:Grupo|Industrias?|Industrial|Comercializadora|Distribuidora|Constructora|' +
+    'Inmobiliaria|Cl[ií]nica|Hospital|Farmacias?|Tiendas?|Restaurante|Hotel|Escuela|' +
+    'Universidad|Colegio|Banco|Aseguradora|Transportes?|Log[ií]stica|Laboratorios?|' +
+    'Seguros|Corporativo|Despacho|Notar[ií]a|Bufete|Gimnasio|Est[eé]tica|Panader[ií]a|' +
+    'Caf[eé]|Boutique|Ferreter[ií]a|Papeler[ií]a|Supermercado|Automotriz|Motors|' +
+    'Agencia|Consultor[ií]a|Soluciones|Servicios)\\s+([A-ZÁÉÍÓÚÑ][\\wÁÉÍÓÚÑáéíóúñ&\\u2019-]*(?:\\s+[A-ZÁÉÍÓÚÑ][\\wÁÉÍÓÚÑáéíóúñ&\\u2019-]*){0,4})'
+  );
+
+  function deburr(value) {
+    return String(value || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  // Los índices de `plain` y `raw` coinciden (quitar tildes no cambia el largo).
+  function capturedText(raw, match, group) {
+    if (!match || match[group] == null) return '';
+    const offset = match[0].indexOf(match[group]);
+    const start = match.index + Math.max(0, offset);
+    return raw.slice(start, start + match[group].length);
+  }
+
+  function titleCaseIfShouting(value) {
+    const text = String(value || '');
+    if (text.length < 5 || text !== text.toUpperCase()) return text;
+
+    const minor = /^(de|del|la|las|los|el|y|en|para|con|por|a|al|e)$/i;
+    let index = 0;
+
+    return text.toLowerCase().replace(/\S+/g, (word) => {
+      const isMinor = index > 0 && minor.test(word);
+      index += 1;
+      if (isMinor) return word;
+      if (word.length <= 3 || word.indexOf('&') !== -1) return word.toUpperCase();
+      return word.charAt(0).toUpperCase() + word.slice(1);
+    });
+  }
+
+  function tidyLabel(value) {
+    let text = String(value || '')
+      .replace(/\s+/g, ' ')
+      .replace(/^[\s:•·\-–—|>»]+/, '')
+      .replace(/[\s.,;:|<>«]+$/, '')
+      .trim();
+
+    if (text.length > 60) text = text.slice(0, 60).replace(/\s+\S*$/, '').trim();
+    if (!text) return '';
+
+    text = titleCaseIfShouting(text);
+    text = text.replace(/\bs\.?a\.?\s*(de\s*)?c\.?v\.?\b/gi, 'S.A. de C.V.');
+    text = text.replace(/\bs\.?\s*de\s*r\.?l\.?\b/gi, 'S. de R.L.');
+    return text.replace(/\s+/g, ' ').trim();
+  }
+
+  function cleanRole(value) {
+    const original = String(value || '').trim();
+    let text = tidyLabel(value);
+    if (!text) return '';
+
+    // "AUXILIAR DE ALMACEN" -> "Auxiliar de almacen" (más natural en un mensaje).
+    if (original.length > 3 && original === original.toUpperCase()) {
+      text = text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+    }
+    text = text.split(/\s+[-–—]\s+/)[0].trim();
+    text = text.split(/[|•·]/)[0].trim();
+    text = text.replace(/\s*\((?:[^)]*)\)\s*$/, '').trim();
+    if (text.length < 2 || text.length > 55) return '';
+    if (/@|https?:|www\.|\d{4,}/i.test(text)) return '';
+    if (text.split(/\s+/).length > 7) return '';
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
+  function cleanCompany(value) {
+    let text = tidyLabel(value);
+    if (!text) return '';
+    text = text.split(/\s+[-–—]\s+/)[0].trim();
+    text = text.split(/[|•·]/)[0].trim();
+    text = text.replace(/\s+(?:s\.?a\.?\s*(?:de\s*)?c\.?v\.?|s\.?\s*de\s*r\.?l\.?)$/i, '').trim();
+    if (text.length < 2 || text.length > 50) return '';
+    if (/@|https?:|www\.|\d{5,}/i.test(text)) return '';
+    if (text.split(/\s+/).length > 7) return '';
+    return text;
+  }
+
+  function extractJobInfo(text) {
+    const raw = String(text || '');
+    const plain = deburr(raw);
+    const info = { company: '', role: '' };
+
+    // 1) Campos con etiqueta explícita ("Empresa: ...", "Puesto: ...").
+    const companyLabel = plain.match(/(?:^|\n)[^\S\n]*(?:empresa|compania|razon social|negocio|marca|reclutadora?)[^\S\n]*[:\-–][^\S\n]*([^\n]{2,70})/i);
+    if (companyLabel) info.company = cleanCompany(capturedText(raw, companyLabel, 1));
+
+    const roleLabel = plain.match(/(?:^|\n)[^\S\n]*(?:puesto|cargo|vacante|posicion|plaza|oferta)[^\S\n]*[:\-–][^\S\n]*([^\n]{2,70})/i);
+    if (roleLabel) info.role = cleanRole(capturedText(raw, roleLabel, 1));
+
+    // 2) Diccionario de puestos (lo más confiable sin etiqueta).
+    if (!info.role) {
+      const roleWord = plain.match(ROLE_REGEX);
+      if (roleWord) info.role = cleanRole(raw.slice(roleWord.index, roleWord.index + roleWord[0].length));
+    }
+
+    // 3) "Vacante de X en Y" / "Buscamos X".
+    if (!info.role) {
+      const roleLine = plain.match(/(?:vacante|puesto|cargo|plaza)\s+(?:de\s+|para\s+)?([^\n.,;:]{3,55})/i);
+      if (roleLine) info.role = cleanRole(capturedText(raw, roleLine, 1).split(/\s+en\s+/i)[0]);
+    }
+
+    // 4) Empresa por frases típicas.
+    if (!info.company) {
+      const patterns = [
+        /(?:^|\n)[^\S\n]*(?:somos|unete a|bienvenid[oa] a|forma parte de)[^\S\n]+([^\n.,;:]{2,55})/i,
+        /(?:^|\n)[^\S\n]*([A-ZÁÉÍÓÚÑ][^\n.,;:]{1,50})\s+(?:esta|busca|solicita|requiere|ofrece|invita)\b/i,
+        /(?:vacante|puesto|cargo|plaza)\b[^\n]{0,50}\ben\s+([A-ZÁÉÍÓÚÑ][^\n.,;:]{1,50})/i
+      ];
+      for (let i = 0; i < patterns.length && !info.company; i += 1) {
+        const match = plain.match(patterns[i]);
+        if (match) info.company = cleanCompany(capturedText(raw, match, 1));
+      }
+    }
+
+    // 5) Empresa por prefijo conocido (Grupo, Clínica, Industrias…).
+    if (!info.company) {
+      const match = raw.match(COMPANY_PREFIX_REGEX);
+      if (match) info.company = cleanCompany(match[0]);
+    }
+
+    // 6) "en {Empresa}" cuando hay un puesto detectado.
+    if (!info.company && info.role) {
+      const match = raw.match(/\ben\s+([A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ&\-'’]*(?:\s+[A-ZÁÉÍÓÚÑ][\wÁÉÍÓÚÑáéíóúñ&\-'’]*){0,4})/);
+      if (match) info.company = cleanCompany(match[1]);
+    }
+
+    if (info.company && info.role && info.company.toLowerCase() === info.role.toLowerCase()) {
+      info.company = '';
+    }
+
+    return info;
   }
 
   /* ------------------------------------------------------------------ */
@@ -409,15 +613,31 @@
 
   function applyTokens(body) {
     const values = templateValues();
-    let out = String(body || '').replace(/\{(nombre|empresa|puesto)\}/gi, (all, key) => {
-      return values[key.toLowerCase()] || '';
-    });
+
+    // Frases que se arman solas según lo que haya detectado o escrito.
+    const presentacion = values.nombre ? 'Soy ' + values.nombre + '. ' : '';
+
+    let postulacion;
+    if (values.puesto) {
+      postulacion = 'al puesto de ' + values.puesto + (values.empresa ? ' en ' + values.empresa : '');
+    } else if (values.empresa) {
+      postulacion = 'a la vacante en ' + values.empresa;
+    } else {
+      postulacion = 'a la vacante';
+    }
+
+    let out = String(body || '')
+      .replace(/\{presentacion\}/gi, presentacion)
+      .replace(/\{postulacion\}/gi, postulacion)
+      .replace(/\{(nombre|empresa|puesto)\}/gi, (all, key) => values[key.toLowerCase()] || '');
+
     out = out
       .replace(/[ \t]{2,}/g, ' ')
       .replace(/\(\s*\)/g, '')
-      .replace(/\s+([.,!?])/g, '$1')
+      .replace(/\s+([.,!?;:])/g, '$1')
       .replace(/[ \t]+\n/g, '\n')
       .replace(/\n{3,}/g, '\n\n');
+
     return out.trim();
   }
 
@@ -758,6 +978,7 @@
       try { ocrWorker.terminate(); } catch (err) {}
       ocrWorker = null;
     }
+    setTimeout(maybeAskName, 500);
   }
 
   function resetSheet() {
@@ -801,7 +1022,7 @@
       if (token !== ocrToken) return;
 
       setProgress(12, 'Iniciando el lector…');
-      const worker = await Tesseract.createWorker('eng', 1, { logger: onOcrLog });
+      const worker = await Tesseract.createWorker('spa', 1, { logger: onOcrLog });
       ocrWorker = worker;
 
       if (token !== ocrToken) {
@@ -868,10 +1089,56 @@
       results.appendChild(list);
     }
 
+    if (results) {
+      const info = extractJobInfo(text);
+      state.ocrInfo = info;
+
+      if (info.company || info.role) {
+        const box = document.createElement('div');
+        box.className = 'detected';
+
+        const title = document.createElement('p');
+        title.className = 'hint';
+        title.textContent = 'También detecté estos datos. Revísalos o corrígelos:';
+        box.appendChild(title);
+
+        const companyField = document.createElement('input');
+        companyField.type = 'text';
+        companyField.id = 'ocr-company';
+        companyField.className = 'field';
+        companyField.placeholder = 'Empresa';
+        companyField.value = info.company;
+        box.appendChild(companyField);
+
+        const roleField = document.createElement('input');
+        roleField.type = 'text';
+        roleField.id = 'ocr-role';
+        roleField.className = 'field';
+        roleField.placeholder = 'Puesto';
+        roleField.value = info.role;
+        box.appendChild(roleField);
+
+        results.appendChild(box);
+      }
+    }
+
     const rawWrap = $('#ocr-raw-wrap');
     const raw = $('#ocr-raw');
     if (raw) raw.value = text || '';
     if (rawWrap) rawWrap.hidden = !text;
+  }
+
+  function setDetectedField(selector, value) {
+    const field = $(selector);
+    if (!field) return;
+    field.value = value || '';
+    field.classList.remove('detected-flash');
+    if (value) {
+      // reinicia la animación aunque se repita el valor
+      void field.offsetWidth;
+      field.classList.add('detected-flash');
+      setTimeout(() => field.classList.remove('detected-flash'), 2400);
+    }
   }
 
   function pickNumber(candidate) {
@@ -889,9 +1156,26 @@
       $('#phone').value = '+' + candidate.digits;
     }
 
+    const companyField = $('#ocr-company');
+    const roleField = $('#ocr-role');
+    const company = companyField ? companyField.value.trim() : '';
+    const role = roleField ? roleField.value.trim() : '';
+
+    setDetectedField('#company', company);
+    setDetectedField('#role', role);
+
+    // Nueva postulación: el mensaje se arma de nuevo con los datos detectados.
+    state.messageDirty = false;
+    applyActiveTemplate();
+
     updatePhoneHint();
     closeSheet();
-    toast('Número listo: ' + candidate.pretty);
+
+    if (company || role) {
+      toast('Número, empresa y puesto listos ✅');
+    } else {
+      toast('Número listo: ' + candidate.pretty);
+    }
   }
 
   function handleText(text) {
@@ -1143,6 +1427,47 @@
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('./sw.js').catch(() => {});
     });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* Nombre del postulante (primera vez)                                 */
+  /* ------------------------------------------------------------------ */
+
+  function maybeAskName() {
+    if (state.name || store.get('askedName', false)) return;
+    const modal = $('#setup-modal');
+    if (!modal) return;
+    if ($('#ocr-modal') && !$('#ocr-modal').hidden) return;
+    modal.hidden = false;
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      const input = $('#setup-name');
+      if (input) input.focus();
+    }, 400);
+  }
+
+  function closeSetupAsk(save) {
+    const modal = $('#setup-modal');
+    const input = $('#setup-name');
+    const value = input ? input.value.trim() : '';
+
+    if (save && value) {
+      state.name = value;
+      store.set('name', value);
+      if (!state.messageDirty) applyActiveTemplate();
+      const settingsName = $('#set-name');
+      if (settingsName) settingsName.value = value;
+    }
+
+    store.set('askedName', true);
+    if (modal) modal.hidden = true;
+    document.body.style.overflow = '';
+
+    if (save && value) {
+      toast('Listo, ' + value.split(/\s+/)[0] + ' 👋');
+    } else if (save) {
+      toast('Puedes agregar tu nombre en Ajustes');
+    }
   }
 
   /* ------------------------------------------------------------------ */
@@ -1426,6 +1751,23 @@
       });
     }
 
+    // Nombre inicial
+    const setupSave = $('#setup-save');
+    if (setupSave) setupSave.addEventListener('click', () => closeSetupAsk(true));
+
+    const setupSkip = $('#setup-skip');
+    if (setupSkip) setupSkip.addEventListener('click', () => closeSetupAsk(false));
+
+    const setupName = $('#setup-name');
+    if (setupName) {
+      setupName.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          closeSetupAsk(true);
+        }
+      });
+    }
+
     // Hoja de escaneo
     const close = $('#ocr-close');
     if (close) close.addEventListener('click', closeSheet);
@@ -1539,7 +1881,7 @@
       return '<option value="' + esc(c.code) + '">' + c.flag + ' +' + esc(c.code) + '</option>';
     }).join('');
 
-    if (!COUNTRIES.some((c) => c.code === state.cc)) state.cc = '57';
+    if (!COUNTRIES.some((c) => c.code === state.cc)) state.cc = '52';
     select.value = state.cc;
   }
 
@@ -1567,6 +1909,8 @@
     handleSharedTarget();
     registerServiceWorker();
     updatePhoneHint();
+
+    setTimeout(maybeAskName, 900);
   }
 
   if (document.readyState === 'loading') {

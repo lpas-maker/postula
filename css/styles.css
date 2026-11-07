@@ -646,6 +646,48 @@ textarea.field { resize: vertical; min-height: 96px; line-height: 1.45; }
   font-size: 13.5px;
 }
 
+/* ---------- datos detectados (empresa / puesto) ---------- */
+
+.detected {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1.5px dashed color-mix(in srgb, var(--green) 45%, var(--line));
+  border-radius: 14px;
+  background: var(--green-soft);
+}
+
+.detected .field {
+  background: var(--surface);
+  font-size: 15px;
+}
+
+.field.detected-flash {
+  animation: flashField 1.7s ease;
+}
+
+@keyframes flashField {
+  0% { border-color: var(--green); background: var(--green-soft); }
+  100% { border-color: transparent; background: var(--surface-2); }
+}
+
+/* ---------- bienvenida / nombre ---------- */
+
+.sheet.setup {
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding-top: 26px;
+}
+
+.setup-icon { font-size: 34px; line-height: 1; }
+.setup h2 { font-size: 20px; font-weight: 780; letter-spacing: -.3px; }
+.setup .hint { max-width: 330px; }
+.setup .field { text-align: center; font-size: 17px; font-weight: 620; }
+.setup .field:focus { border-color: var(--green); }
+.setup .link-btn { align-self: center; }
+
 /* ---------- toast ---------- */
 
 #toast {

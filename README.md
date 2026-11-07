@@ -1,8 +1,9 @@
 # Postula
 
 App web instalable (PWA) para postularse por WhatsApp sin guardar contactos:
-detecta el número desde una captura, abre el chat con el mensaje listo y
-comparte la hoja de vida.
+detecta desde una captura el **número, la empresa y el puesto**, pide el nombre
+de la postulante, arma el mensaje y comparte la hoja de vida. Pensada para
+vacantes en **México** (+52).
 
 > Pensada para usarse desde el celular, con un icono en la pantalla de inicio.
 
@@ -28,13 +29,30 @@ el historial y no volver a guardar contactos.
 
 ## Cómo se usa
 
-1. **Sube tu hoja de vida una vez.** Queda guardada en el teléfono.
-2. **Pega el número** o toca **Escanear** y elige una captura de la vacante.
-   La app lee la imagen y te muestra los números que encontró.
-3. **Revisa el mensaje** (puedes elegir plantilla y editarlo).
-4. Toca **Abrir chat en WhatsApp** o **Enviar mensaje + CV juntos**.
-5. La aplicación queda registrada en **Historial**. Toca la etiqueta
+1. **La primera vez te pregunta tu nombre.** Se usa para firmar el mensaje
+   (“Soy María Pérez.”). Puedes cambiarlo en Ajustes.
+2. **Sube tu hoja de vida una vez.** Queda guardada en el teléfono.
+3. **Pega el número** o toca **Escanear** y elige una captura de la vacante.
+   La app lee la imagen y muestra los números, la **empresa** y el **puesto**
+   que encontró. Puedes corregirlos ahí mismo antes de continuar.
+4. **Revisa el mensaje**: se arma solo, por ejemplo
+   *“¡Hola! Buen día. Soy María Pérez. Me gustaría postularme al puesto de
+   Recepcionista en Clínica San José…”*. Puedes editarlo o cambiar de plantilla.
+5. Toca **Abrir chat en WhatsApp** o **Enviar mensaje + CV juntos**.
+6. La aplicación queda registrada en **Historial**. Toca la etiqueta
    `ABIERTA` / `ENVIADA` para cambiar el estado.
+
+### Qué detecta de la captura
+
+- **Número** de WhatsApp (con lógica para México: 10 dígitos → +52).
+- **Puesto** por etiquetas (`Puesto:`, `Vacante:`, `Cargo:`) o por un
+  diccionario de cargos comunes (recepcionista, auxiliar administrativo,
+  vendedor, chofer, contador, etc.).
+- **Empresa** por etiquetas (`Empresa:`), frases (“Somos…”, “Únete a…”) o
+  nombres con prefijos conocidos (Grupo, Clínica, Industrias, Tiendas…).
+
+Si algo no lo detecta, se escribe a mano en el formulario y el mensaje se
+rearma igual.
 
 También puedes **compartir una captura desde la galería** directamente a
 Postula (solo Android): Compartir → Postula → detecta el número solo.
@@ -115,9 +133,9 @@ Alternativas sin repo público: arrastrar la carpeta a
 
 - **Nada sale del teléfono.** El CV, las plantillas y el historial viven en
   `IndexedDB` y `localStorage`.
-- **El OCR corre localmente** con [Tesseract.js](https://tesseract.projectnaptha.com/).
-  La primera vez descarga el lector (~5 MB) desde un CDN; después queda
-  cacheado y funciona sin internet.
+- **El OCR corre localmente** con [Tesseract.js](https://tesseract.projectnaptha.com/)
+  usando el modelo de español (`spa`). La primera vez descarga el lector
+  (~8 MB) desde un CDN; después queda cacheado y funciona sin internet.
 - No hay cuentas, servidores, analítica ni publicidad.
 
 ---
@@ -136,10 +154,12 @@ tools/make_icons.py     regenera los iconos sin dependencias
 
 ### Cambios rápidos
 
-- **País por defecto**: `state.cc` y el arreglo `COUNTRIES` en `js/app.js`.
+- **País por defecto**: México (`52`) en `state.cc` y el arreglo `COUNTRIES` de `js/app.js`.
 - **Plantillas**: desde *Ajustes → Plantillas* (se guardan en el teléfono).
   Admiten `{nombre}`, `{empresa}` y `{puesto}`.
-- **Mensaje inicial**: edita `DEFAULT_TEMPLATES` en `js/app.js`.
+- **Mensaje inicial**: edita `DEFAULT_TEMPLATES` en `js/app.js`. Los tokens
+  `{presentacion}` y `{postulacion}` arman las frases solas según los datos
+  detectados; `{nombre}`, `{empresa}` y `{puesto}` insertan el valor crudo.
 - **Iconos**: `python3 tools/make_icons.py`.
 
 ### Notas técnicas
@@ -148,8 +168,9 @@ tools/make_icons.py     regenera los iconos sin dependencias
 - Compartir archivo + texto: `navigator.share({ files, text })` con
   `navigator.canShare`, y descarga como respaldo si el navegador no lo soporta.
 - El service worker recibe capturas con `share_target` (Android Chrome).
-- Probado con capturas reales tipo chat de WhatsApp: detecta `300 123 4567`
-  y lo normaliza a `+57 300 123 4567`.
+- Probado con capturas tipo chat de WhatsApp: detecta `55 1234 5678`, lo
+  normaliza a `+52 55 1234 5678` y extrae “Vacante: Recepcionista” /
+  “Empresa: Clínica San José” para armar el mensaje.
 
 ---
 
